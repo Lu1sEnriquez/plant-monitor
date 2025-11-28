@@ -36,19 +36,69 @@ export interface AppUser {
   plantsIds?: string[];
 }
 
+// 🔥 NUEVA: Entidad Reading para reflejar Java
+export interface Reading {
+  id?: string;
+  plantId: string;
+  userId?: string;
+  timestamp?: string;
+  
+  // Datos de sensores
+  tempC?: number;
+  ambientHumidity?: number;
+  lightLux?: number;
+  soilHumidity?: number;
+  
+  // Estado de bomba como boolean
+  pumpOn?: boolean;
+  
+  // Enums
+  msgType?: MessageType;
+  qcStatus?: QcStatus;
+  advisorResult?: AdvisorResult;
+}
+
+// ==========================================
+// ENUMS (Reflejan los enums de Java)
+// ==========================================
+
+export enum QcStatus {
+  VALID = "VALID",
+  OUT_OF_RANGE = "OUT_OF_RANGE",
+  RATE_ERROR = "RATE_ERROR", 
+  QC_ERROR = "QC_ERROR",
+  EVENT = "EVENT"
+}
+
+export enum AdvisorResult {
+  CRITICA = "CRITICA",
+  ALERTA = "ALERTA",
+  RECOMENDACION = "RECOMENDACION",
+  INFO = "INFO"
+}
+
+export enum MessageType {
+  READING = "READING",
+  EVENT = "EVENT"
+}
+
+export enum PumpState {
+  ON = "ON",
+  OFF = "OFF"
+}
+
 // ==========================================
 // DTOs DE RESPUESTA (Reflejan los Records de Java)
 // ==========================================
 
 export interface KpiDto {
-  currentTemp: number;
-  currentSoil: number;
-  currentLight: number;
-  // Opcional porque Java no lo envía aún, pero lo calculamos en el front
-  currentAmbient?: number; 
-  healthIndex: number;
-  dataQuality: number;
-  lastUpdate: string;
+  currentTemp: number
+  currentSoil: number
+  currentLight: number
+  healthIndex: number
+  dataQuality: number
+  lastUpdate: string
+  pumpOn: boolean // 🔥 Cambiado a boolean
 }
 
 export interface ChartPointDto {
@@ -61,8 +111,110 @@ export interface ClusterResultDto {
   clusters: Record<string, number>;
 }
 
+// 🔥 NUEVO: Para respuestas de creación/actualización
+export interface DeviceResponse {
+  id: string;
+  plantId: string;
+  name: string;
+  message: string;
+}
+
+export interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  message?: string;
+  error?: string;
+  timestamp?: string;
+}
+
+
+
+
+
 // ==========================================
-// TIPOS DE UI (Para las gráficas del Frontend)
+// WEBSOCKET TYPES - ACTUALIZADAS
+// ==========================================
+
+export enum WebSocketMessageType {
+  TELEMETRY = "TELEMETRY",
+  PUMP_EVENT = "PUMP_EVENT", 
+  ALERT = "ALERT"
+}
+
+export interface WebSocketMessage<T = WebSocketData> {
+  type: string;  // Cambiado de WebSocketMessageType a string para coincidir con Java
+  plantId: string;
+  timestamp: string;
+  data: T;
+}
+
+// 🔥 ACTUALIZADO: Para coincidir con TelemetryData.java
+export interface TelemetryData {
+  temp?: number;
+  ambientHum?: number;
+  soilHum?: number;
+  light?: number;
+  pumpOn?: boolean;
+  alertLevel?: string;
+}
+
+// 🔥 ACTUALIZADO: Para coincidir con PumpEvent.java
+export interface PumpEventData {
+  pumpOn: boolean;
+  event: string;
+}
+
+// 🔥 ACTUALIZADO: Para coincidir con Alert.java
+export interface AlertData {
+  level: string;
+  message: string;
+  metric: string;
+}
+
+export type WebSocketData = TelemetryData | PumpEventData | AlertData;
+
+// ==========================================
+// DTOs DE RESPUESTA - ACTUALIZADOS
+// ==========================================
+
+export interface KpiDto {
+  currentTemp: number;
+  currentSoil: number;
+  currentLight: number;
+  healthIndex: number;
+  dataQuality: number;
+  lastUpdate: string;
+  pumpOn: boolean;
+}
+
+export interface ChartPointDto {
+  time: string;
+  value: number;
+}
+
+export interface ClusterResultDto {
+  period: string;
+  clusters: Record<string, number>;
+}
+
+// 🔥 ACTUALIZADO: Para respuestas de creación/actualización
+export interface DeviceResponse {
+  id: string;
+  plantId: string;
+  name: string;
+  message: string;
+}
+
+export interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  message?: string;
+  error?: string;
+  timestamp?: string;
+}
+
+// ==========================================
+// TIPOS DE UI - ACTUALIZADOS
 // ==========================================
 
 export interface CombinedHistoryData {
@@ -71,7 +223,6 @@ export interface CombinedHistoryData {
   ambientHum?: number;
   soilHum?: number;
   light?: number;
-  // 🔥 FIX: Index signature requerido por Recharts (LineChart)
   [key: string]: unknown; 
 }
 
@@ -79,21 +230,16 @@ export interface ClusteringPiePoint {
   name: string;
   value: number;
   color: string;
-  // 🔥 FIX: Index signature requerido por Recharts (PieChart)
   [key: string]: unknown;
 }
 
 // ==========================================
-// COMANDOS Y AUTH
+// COMANDOS Y AUTH - MANTENIDOS
 // ==========================================
 
 export enum DeviceCommand {
   RIEGO = "RIEGO",
-  CONFIG_SET = "CONFIG_SET",
   REBOOT = "REBOOT",
-  CONFIG_RESET = "CONFIG_RESET",
-  FORCE_READ = "FORCE_READ",
-  SET_LIGHT_COLOR = "SET_LIGHT_COLOR"
 }
 
 export interface GenericCommandPayload {
@@ -105,4 +251,102 @@ export interface AuthRequest {
   username: string;
   password: string;
   email?: string;
+}
+
+export interface AuthResponse {
+  success: boolean;
+  user?: {
+    id: string;
+    username: string;
+    email: string;
+  };
+  token?: string;
+  message?: string;
+}
+
+// ==========================================
+// CONFIGURACIÓN Y FORMULARIOS - MANTENIDOS
+// ==========================================
+
+export interface DeviceConfig {
+  minSoilHumidity: number;
+  maxSoilHumidity: number;
+  minTempC: number;
+  maxTempC: number;
+  minLightLux: number;
+  maxLightLux: number;
+}
+
+export interface CreateDeviceRequest {
+  plantId: string;
+  name: string;
+  ownerId: string;
+  description?: string;
+}
+
+export interface UpdateDeviceRequest {
+  name?: string;
+  description?: string;
+  minSoilHumidity?: number;
+  maxSoilHumidity?: number;
+  minTempC?: number;
+  maxTempC?: number;
+  minLightLux?: number;
+  maxLightLux?: number;
+}
+
+// ==========================================
+// TIPOS DE UTILIDAD - MANTENIDOS
+// ==========================================
+
+export type TimePeriod = "24h" | "7d" | "30d";
+export type AlertLevel = "CRITICA" | "ALERTA" | "INFO";
+export type SensorType = "temperature" | "humidity" | "light" | "soil_moisture";
+export type WebSocketStatus = "CONNECTED" | "CONNECTING" | "DISCONNECTED" | "ERROR";
+
+// ==========================================
+// CONSTANTES Y DEFAULTS - MANTENIDOS
+// ==========================================
+
+export const DEFAULT_CONFIG: DeviceConfig = {
+  minSoilHumidity: 35,
+  maxSoilHumidity: 100,
+  minTempC: -5,
+  maxTempC: 38,
+  minLightLux: 200,
+  maxLightLux: 50000
+};
+
+export const SENSOR_RANGES = {
+  temperature: { min: -20, max: 80 },
+  humidity: { min: 0, max: 100 },
+  light: { min: 0, max: 100000 },
+  soil_moisture: { min: 0, max: 100 }
+} as const;
+
+// ==========================================
+// HELPER TYPES - MANTENIDOS
+// ==========================================
+
+export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+export type RequiredKeys<T, K extends keyof T> = T & Required<Pick<T, K>>;
+export type Nullable<T> = T | null;
+
+// ==========================================
+// TIPOS PARA ESTADO GLOBAL - MANTENIDOS
+// ==========================================
+
+export interface AppState {
+  user: AppUser | null;
+  devices: PlantDevice[];
+  selectedDevice: PlantDevice | null;
+  isLoading: boolean;
+  websocketStatus: WebSocketStatus;
+}
+
+export interface WebSocketState {
+  isConnected: boolean;
+  retryCount: number;
+  lastMessage: WebSocketMessage | null;
+  subscriptions: string[];
 }
