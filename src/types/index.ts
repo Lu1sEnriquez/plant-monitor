@@ -283,6 +283,8 @@ export interface AuthResponse {
 export interface DeviceConfig {
   minSoilHumidity: number;
   maxSoilHumidity: number;
+  minHumidity: number;
+  maxHumidity: number;
   minTempC: number;
   maxTempC: number;
   minLightLux: number;
@@ -322,11 +324,13 @@ export type WebSocketStatus = "CONNECTED" | "CONNECTING" | "DISCONNECTED" | "ERR
 
 export const DEFAULT_CONFIG: DeviceConfig = {
   minSoilHumidity: 35,
-  maxSoilHumidity: 100,
+  maxSoilHumidity: 90,
   minTempC: -5,
   maxTempC: 38,
   minLightLux: 200,
-  maxLightLux: 50000
+  maxLightLux: 50000,
+  minHumidity: 40,
+  maxHumidity: 80
 };
 
 export const SENSOR_RANGES = {

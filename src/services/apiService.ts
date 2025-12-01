@@ -1,14 +1,14 @@
-import { 
-  PlantDevice, 
-  KpiDto, 
-  ChartPointDto, 
-  ClusterResultDto, 
-  GenericCommandPayload, 
+import {
+  PlantDevice,
+  KpiDto,
+  ChartPointDto,
+  ClusterResultDto,
+  GenericCommandPayload,
   DeviceCommand,
-  AuthRequest, 
+  AuthRequest,
   AppUser,
   CombinedHistoryData,
-  PlantAlert
+  PlantAlert,
 } from "@/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
@@ -17,7 +17,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 const getAuthHeaders = (): Record<string, string> => {
   const user = localStorage.getItem("apiUser");
   const pass = localStorage.getItem("apiPass");
-  
+
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
@@ -26,26 +26,25 @@ const getAuthHeaders = (): Record<string, string> => {
     const token = btoa(`${user}:${pass}`);
     headers["Authorization"] = `Basic ${token}`;
   }
-  
+
   return headers;
 };
 
 export const apiService = {
-  
   // --- AUTH ---
   login: async (credentials: AuthRequest): Promise<AppUser> => {
     const token = btoa(`${credentials.username}:${credentials.password}`);
-    
+
     const res = await fetch(`${API_URL}/auth/login`, {
       method: "POST",
       headers: {
-        "Authorization": `Basic ${token}`,
-        "Content-Type": "application/json"
-      }
+        Authorization: `Basic ${token}`,
+        "Content-Type": "application/json",
+      },
     });
 
     if (!res.ok) throw new Error("Credenciales inválidas");
-    return res.json(); 
+    return res.json();
   },
 
   register: async (data: AuthRequest): Promise<string> => {
@@ -64,7 +63,9 @@ export const apiService = {
 
   // --- DISPOSITIVOS ---
   getDevices: async (): Promise<PlantDevice[]> => {
-    const res = await fetch(`${API_URL}/devices`, { headers: getAuthHeaders() });
+    const res = await fetch(`${API_URL}/devices`, {
+      headers: getAuthHeaders(),
+    });
     if (!res.ok) throw new Error("Error fetching devices");
     return res.json();
   },
@@ -73,58 +74,109 @@ export const apiService = {
     const res = await fetch(`${API_URL}/devices`, {
       method: "POST",
       headers: getAuthHeaders(),
-      body: JSON.stringify({ plantId, name, userId }) 
+      body: JSON.stringify({ plantId, name, userId }),
     });
-    
+
     if (!res.ok) {
-        const errorMsg = await res.text();
-        throw new Error(errorMsg || "Error creando dispositivo");
+      const errorMsg = await res.text();
+      throw new Error(errorMsg || "Error creando dispositivo");
     }
     return res.json();
   },
 
   // --- ANALÍTICA ---
   getPlantKPIs: async (plantId: string): Promise<KpiDto> => {
-    const res = await fetch(`${API_URL}/analytics/${plantId}/kpi`, { headers: getAuthHeaders() });
+    const res = await fetch(`${API_URL}/analytics/${plantId}/kpi`, {
+      headers: getAuthHeaders(),
+    });
     if (!res.ok) throw new Error("Error fetching KPIs");
     return res.json();
   },
 
-  getHistoryCombined: async (plantId: string, range: string = "24h"): Promise<CombinedHistoryData[]> => {
+  getHistoryCombined: async (
+    plantId: string,
+    range: string = "24h"
+  ): Promise<CombinedHistoryData[]> => {
     const endpoints = [
-        `field=temperatura&range=${range}`,
-        `field=humedad_aire&range=${range}`,
-        `field=humedad_suelo&range=${range}`,
-        `field=luz&range=${range}`
+      `field=temperatura&range=${range}`,
+      `field=humedad_aire&range=${range}`,
+      `field=humedad_suelo&range=${range}`,
+      `field=luz&range=${range}`,
     ];
 
-    const promises = endpoints.map(qs => 
-        fetch(`${API_URL}/analytics/${plantId}/history?${qs}`, { headers: getAuthHeaders() })
-            .then(res => res.ok ? res.json() : [])
+    const promises = endpoints.map((qs) =>
+      fetch(`${API_URL}/analytics/${plantId}/history?${qs}`, {
+        headers: getAuthHeaders(),
+      }).then((res) => (res.ok ? res.json() : []))
     );
 
-    const [temps, hums, soils, lights] = await Promise.all(promises) as [ChartPointDto[], ChartPointDto[], ChartPointDto[], ChartPointDto[]];
+    const [temps, hums, soils, lights] = (await Promise.all(promises)) as [
+      ChartPointDto[],
+      ChartPointDto[],
+      ChartPointDto[],
+      ChartPointDto[]
+    ];
 
     const mergedData = new Map<string, CombinedHistoryData>();
 
+    // Helper para llenar el mapa
     const fillMap = (data: ChartPointDto[], key: keyof CombinedHistoryData) => {
-        data.forEach(point => {
-            const timeKey = new Date(point.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            if (!mergedData.has(timeKey)) mergedData.set(timeKey, { time: timeKey });
-            (mergedData.get(timeKey) as CombinedHistoryData)[key] = point.value;
-        });
+      data.forEach((point) => {
+        // CORRECCIÓN 1: Usamos la fecha cruda (ISO) como ID único para no mezclar días
+        // InfluxDB devuelve tiempos alineados por 'aggregateWindow', así que coincidirán
+        const rawTime = point.time;
+
+        if (!mergedData.has(rawTime)) {
+          mergedData.set(rawTime, { time: rawTime }); // Guardamos rawTime temporalmente
+        }
+        (mergedData.get(rawTime) as CombinedHistoryData)[key] = point.value;
+      });
     };
 
-    fillMap(temps, 'temp');
-    fillMap(hums, 'ambientHum');
-    fillMap(soils, 'soilHum');
-    fillMap(lights, 'light');
+    fillMap(temps, "temp");
+    fillMap(hums, "ambientHum");
+    fillMap(soils, "soilHum");
+    fillMap(lights, "light");
 
-    return Array.from(mergedData.values()).sort((a, b) => a.time.localeCompare(b.time)); 
+    // Convertimos a array y ordenamos por fecha real (ISO string se ordena bien alfabéticamente)
+    const sortedData = Array.from(mergedData.values()).sort((a, b) =>
+      a.time.localeCompare(b.time)
+    );
+
+    // CORRECCIÓN 2: Formateamos la etiqueta 'time' SOLO PARA VISUALIZACIÓN al final
+    return sortedData.map((item) => {
+      const date = new Date(item.time);
+
+      let displayTime;
+      if (range === "7d") {
+        // Formato para 7 días: "Lun 10:00" o "01/12 10:00"
+        displayTime = date.toLocaleDateString("es-ES", {
+          weekday: "short", // Lun
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      } else {
+        // Formato para 24h: "10:00"
+        displayTime = date.toLocaleTimeString("es-ES", {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      }
+
+      return {
+        ...item,
+        time: displayTime, // Reemplazamos el ISO string con el texto bonito para la gráfica
+      };
+    });
   },
-  
-  getClustering: async (plantId: string, range: string = "7d"): Promise<ClusterResultDto> => {
-    const res = await fetch(`${API_URL}/analytics/${plantId}/clustering?range=${range}`, { headers: getAuthHeaders() });
+  getClustering: async (
+    plantId: string,
+    range: string = "7d"
+  ): Promise<ClusterResultDto> => {
+    const res = await fetch(
+      `${API_URL}/analytics/${plantId}/clustering?range=${range}`,
+      { headers: getAuthHeaders() }
+    );
     if (!res.ok) throw new Error("Error fetching clustering");
     return res.json();
   },
@@ -140,7 +192,7 @@ export const apiService = {
     if (!res.ok) throw new Error("Error sending command");
     return res.text();
   },
-  
+
   updateConfig: async (plantId: string, config: Partial<PlantDevice>) => {
     const res = await fetch(`${API_URL}/devices/${plantId}/thresholds`, {
       method: "PUT",
@@ -151,24 +203,24 @@ export const apiService = {
     return res.json();
   },
 
- getAlerts: async (plantId: string): Promise<PlantAlert[]> => {
+  getAlerts: async (plantId: string): Promise<PlantAlert[]> => {
     // Se agrega el objeto de configuración con los headers
     const response = await fetch(`${API_URL}/alerts/plant/${plantId}`, {
-        headers: getAuthHeaders(),
+      headers: getAuthHeaders(),
     });
 
     if (!response.ok) {
-        console.error("Error fetching alerts");
-        return []; 
+      console.error("Error fetching alerts");
+      return [];
     }
     return response.json();
   },
-  
+
   markAlertRead: async (alertId: string): Promise<void> => {
-      // Se agregan los headers al objeto existente
-      await fetch(`${API_URL}/alerts/${alertId}/read`, { 
-          method: 'PUT',
-          headers: getAuthHeaders(),
-      });
-  }
+    // Se agregan los headers al objeto existente
+    await fetch(`${API_URL}/alerts/${alertId}/read`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+    });
+  },
 };
