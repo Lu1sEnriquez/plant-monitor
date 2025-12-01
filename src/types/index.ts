@@ -101,6 +101,18 @@ export interface KpiDto {
   pumpOn: boolean // 🔥 Cambiado a boolean
 }
 
+// types.ts
+export interface PlantAlert {
+    id: string;
+    plantId: string;
+    severity: "CRITICA" | "ALERTA" | "INFO";
+    message: string;
+    metric: string;
+    value: number;
+    timestamp: string; // ISO String
+    isRead: boolean;
+}
+
 export interface ChartPointDto {
   time: string;
   value: number;

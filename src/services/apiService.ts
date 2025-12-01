@@ -7,7 +7,8 @@ import {
   DeviceCommand,
   AuthRequest, 
   AppUser,
-  CombinedHistoryData
+  CombinedHistoryData,
+  PlantAlert
 } from "@/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
@@ -148,5 +149,26 @@ export const apiService = {
     });
     if (!res.ok) throw new Error("Error updating config");
     return res.json();
+  },
+
+ getAlerts: async (plantId: string): Promise<PlantAlert[]> => {
+    // Se agrega el objeto de configuración con los headers
+    const response = await fetch(`${API_URL}/alerts/plant/${plantId}`, {
+        headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+        console.error("Error fetching alerts");
+        return []; 
+    }
+    return response.json();
+  },
+  
+  markAlertRead: async (alertId: string): Promise<void> => {
+      // Se agregan los headers al objeto existente
+      await fetch(`${API_URL}/alerts/${alertId}/read`, { 
+          method: 'PUT',
+          headers: getAuthHeaders(),
+      });
   }
 };
