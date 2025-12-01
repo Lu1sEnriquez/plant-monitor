@@ -95,6 +95,7 @@ export interface KpiDto {
   currentTemp: number
   currentSoil: number
   currentLight: number
+  currentHumidity: number
   healthIndex: number
   dataQuality: number
   lastUpdate: string

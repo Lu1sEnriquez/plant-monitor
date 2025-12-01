@@ -115,6 +115,7 @@ export default function PlantDetailPage() {
       ...prev!,
       currentTemp: telemetry.temp ?? prev?.currentTemp ?? 0,
       currentSoil: telemetry.soilHum ?? prev?.currentSoil ?? 0,
+      currentHumidity: telemetry.ambientHum ?? prev?.currentHumidity ?? 0,
       currentLight: telemetry.light ?? prev?.currentLight ?? 0,
       pumpOn: telemetry.pumpOn ?? prev?.pumpOn ?? false, 
       healthIndex: calculateHealthIndex(telemetry),
@@ -391,7 +392,7 @@ export default function PlantDetailPage() {
     </div>
   );
 
-  const safeKpi = kpiData || { currentTemp: 0, currentSoil: 0, healthIndex: 0, dataQuality: 0, currentLight: 0, lastUpdate: "", pumpOn: false };
+  const safeKpi = kpiData || { currentTemp: 0, currentSoil: 0,currentHumidity: 0, healthIndex: 0, dataQuality: 0, currentLight: 0, lastUpdate: "", pumpOn: false };
   const currentAmbientHum = historyData.length > 0 ? historyData[historyData.length - 1].ambientHum || 0 : 0;
 
   return (
