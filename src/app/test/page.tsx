@@ -13,13 +13,14 @@ import { Wifi, WifiOff, Send, Trash2, Play, Square } from "lucide-react"
 // WebSocket
 import { Client } from '@stomp/stompjs'
 import SockJS from 'sockjs-client'
+import { WebSocketData } from "@/types"
 
 interface TestMessage {
   id: string
   timestamp: string
   type: "TELEMETRY" | "PUMP_EVENT" | "ALERT" | "MANUAL"
   plantId: string
-  data: any
+  data: WebSocketData
 }
 
 export default function WebSocketTestPage() {
@@ -28,7 +29,7 @@ export default function WebSocketTestPage() {
   const [plantId, setPlantId] = useState("Planta123")
   const [autoSend, setAutoSend] = useState(false)
   const stompClientRef = useRef<Client | null>(null)
-  const autoSendRef = useRef<NodeJS.Timeout>()
+  const autoSendRef = useRef<NodeJS.Timeout | undefined>(undefined)
 
   // 🔴 CONEXIÓN WEBSOCKET SIMPLIFICADA
   useEffect(() => {
