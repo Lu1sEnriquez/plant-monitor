@@ -1,37 +1,132 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🌱 Plant Monitor – Frontend
 
-## Getting Started
+Frontend del sistema **Plant Monitor**, encargado de visualizar en tiempo real el estado de las plantas IoT (ESP32), mostrar métricas ambientales, historial de datos y permitir acciones como el riego remoto.
 
-First, run the development server:
+🔗 Repositorio: https://github.com/Lu1sEnriquez/plant-monitor
+
+---
+
+## 🧠 Descripción General
+
+Este frontend consume información proveniente del **backend** mediante APIs REST y comunicación en tiempo real, mostrando:
+
+- Índice de Salud General (ESI)
+- Temperatura
+- Humedad del suelo
+- Humedad del aire
+- Intensidad lumínica
+- Calidad de datos IoT
+- Historial ambiental y análisis semanal
+
+Cada planta se identifica por un **Plant ID único**, el cual debe coincidir con el configurado en el ESP32 y el backend.
+
+---
+
+## ⚙️ Variables de Entorno
+
+Crea un archivo llamado **`.env.local`** (o `.env` según tu configuración) basándote en el siguiente template.
+
+### 📄 `.env.example`
+
+```env
+# ===============================
+# FRONTEND CONFIGURATION
+# ===============================
+
+# URL del backend (Spring Boot)
+NEXT_PUBLIC_API_URL=http://localhost:8080
+
+# WebSocket / tiempo real (si aplica)
+NEXT_PUBLIC_WS_URL=ws://localhost:8080
+
+# Identificador de entorno
+NEXT_PUBLIC_APP_ENV=development
+
+# Tiempo de refresco de datos (ms)
+NEXT_PUBLIC_REFRESH_INTERVAL=5000
+```
+
+🔴 **Nota importante:**
+- Estas variables **NO deben contener credenciales sensibles**
+- El frontend **no se conecta directamente a InfluxDB ni HiveMQ**
+
+---
+
+## 🔗 Relación con Backend y Plantas
+
+Para que el sistema funcione correctamente:
+
+- El **Plant ID** debe ser el mismo en:
+  - ESP32 (firmware)
+  - Backend (MQTT + DB)
+  - Frontend (ruta o selector de planta)
+
+Ejemplo:
+```
+Planta123
+```
+
+---
+
+## 🚀 Instalación y Ejecución
+
+### 1️⃣ Instalar dependencias
+
+```bash
+npm install
+# o
+npm install --legacy-peer-deps
+```
+
+### 2️⃣ Ejecutar en desarrollo
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+El frontend quedará disponible en:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+http://localhost:3000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## 🌐 Despliegue
 
-To learn more about Next.js, take a look at the following resources:
+El proyecto está preparado para desplegarse en **Vercel**.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Asegúrate de configurar las variables de entorno en Vercel usando los mismos nombres del `.env.example`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## ✅ Buenas Prácticas
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- ✅ No subir archivos `.env` al repositorio
+- ✅ Mantener sincronizado el Plant ID entre sistemas
+- ✅ Verificar conexión backend antes de pruebas
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-# plant-monitor
+---
+
+## 🛠️ Tecnologías
+
+- Next.js
+- React
+- Tailwind / UI Components
+- WebSockets / Fetch API
+
+---
+
+## 📞 Soporte
+
+Si no se muestran datos:
+
+- Verifica que el backend esté activo
+- Confirma que el Plant ID exista
+- Revisa la URL configurada en `NEXT_PUBLIC_API_URL`
+
+---
+
+🌱 **Plant Monitor Frontend**
+Sistema de visualización IoT para monitoreo inteligente de plantas
+
